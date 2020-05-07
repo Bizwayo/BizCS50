@@ -193,6 +193,11 @@ function PlayState:update(dt)
                     -- if ball goes below bounds, revert to serve state and decrease health
             if balls[counter].y >= VIRTUAL_HEIGHT then
                 self.health = self.health - 1
+
+                if self.paddle.size > 1 then
+                    self.paddle.size = self.paddle.size - 1;
+                end
+
                 gSounds['hurt']:play()
                 
                 self.ball1.current = false
@@ -213,6 +218,20 @@ function PlayState:update(dt)
                     })
                 end
             end
+
+            --For score to increase paddle size
+            if self.score > 1000 and self.score < 1150 then
+                if self.paddle.size < 4 then
+                    self.paddle.size = self.paddle.size + 1;
+                end
+            end
+            if self.score > 1250 and self.score < 1500 then
+                if self.paddle.size < 4 then
+                    self.paddle.size = self.paddle.size + 1;
+                end
+            end
+
+
 
             -- for rendering particle systems
             for k, brick in pairs(self.bricks) do
