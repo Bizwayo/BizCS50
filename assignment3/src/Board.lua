@@ -13,19 +13,13 @@
 
 Board = Class{}
 
-function Board:init(x, y,level)
+function Board:init(x, y, level)
     self.x = x
     self.y = y
     self.matches = {}
-
-    self.level = 1
-    self.variety = 1
-
-    --types per round till 6
-    if self.level > 1 then
-        self.variety = math.random(2,3)
-    end
+    self.level = level
     
+    self.variety = math.min(6,self.level)
 
     self:initializeTiles()
 end
@@ -39,9 +33,11 @@ function Board:initializeTiles()
         table.insert(self.tiles, {})
 
         for tileX = 1, 8 do
+
+            local v = math.min(self.variety, math.random(2,6)) 
             
             -- create a new tile at X,Y with a random color and variety
-            table.insert(self.tiles[tileY], Tile(tileX, tileY, math.random(18), self.variety ) )
+            table.insert(self.tiles[tileY], Tile(tileX, tileY, math.random(8), v ) )
         end
     end
 
@@ -84,12 +80,25 @@ function Board:calculateMatches()
                 -- if we have a match of 3 or more up to now, add it to our matches table
                 if matchNum >= 3 then
                     local match = {}
+                    local delRow = false
 
                     -- go backwards from here by matchNum
                     for x2 = x - 1, x - matchNum, -1 do
-                        
-                        -- add each tile to the match that's in that match
-                        table.insert(match, self.tiles[y][x2])
+                        if self.tiles[y][x2].shine then
+                            delRow = true
+                            break
+                        end
+                    end
+
+                    if delRow then
+                        for i = 1,8 do
+                            table.insert(match,self.tiles[y][i])
+                        end
+                    else
+                        for x2 = x - 1, x - matchNum, -1 do
+                            -- add each tile to the match that's in that match
+                            table.insert(match, self.tiles[y][x2])
+                        end 
                     end
 
                     -- add this match to our total matches table
@@ -249,7 +258,7 @@ function Board:getFallingTiles()
             if not tile then
 
                 -- new tile with random color and variety
-                local tile = Tile(x, y, math.random(18), self.variety)
+                local tile = Tile(x, y,  math.random(8), self.variety)
                 tile.y = -32
                 self.tiles[y][x] = tile
 
@@ -262,6 +271,71 @@ function Board:getFallingTiles()
     end
 
     return tweens
+end
+
+function Board:update(dt)
+    for y = 1, #self.tiles do
+        for x = 1, #self.tiles[1] do
+            self.tiles[y][x]:update(dt)
+        end
+    end
+end
+
+function Board:swap(t1,t2)
+    local tempX = t1.gridX
+    local tempY = t2.gridY
+
+    t1.gridX = t2.gridX
+    t1.gridX = t2.gridY
+    t2.gridX = tempX
+    t2.gridX = tempY
+
+    self.tiles[t1.gridY][t1.gridX] = t1
+    self.tiles[t2.gridY][t2.gridX] = t2
+end
+
+function Board:checkMatches()
+    for y=1,8 do
+        for x = 1,8 do
+            --left
+            if x > 1 then
+                self:swap(self.tiles[y][x],self.tiles[y][x-1])
+                if self:calculateMatches() then
+                    self:swap(self.tiles[y][x],self.tiles[y][x-1])
+                    return true
+                end
+            end
+
+            --right
+            if x < 8 then
+                self:swap(self.tiles[y][x],self.tiles[y][x+1])
+                if self:calculateMatches() then
+                    self:swap(self.tiles[y][x],self.tiles[y][x+1])
+                    return true
+                end
+            end
+            
+            --top
+            if y > 1 then
+                self:swap(self.tiles[y][x],self.tiles[y-1][x])
+                if self:calculateMatches() then
+                    self:swap(self.tiles[y][x],self.tiles[y-1][x])
+                    return true
+                end
+            end
+
+            --down
+            if y < 8 then
+                self:swap(self.tiles[y][x],self.tiles[y+1][x])
+                if self:calculateMatches() then
+                    self:swap(self.tiles[y][x],self.tiles[y+1][x])
+                    return true
+                end
+            end
+
+        end
+    end
+    return false
 end
 
 function Board:render()

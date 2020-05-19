@@ -26,6 +26,29 @@ function Tile:init(x, y, color, variety)
     -- tile appearance/points
     self.color = color
     self.variety = variety
+    self.shine = false
+
+    if math.random(1,100) == 5 then
+        self.shine = true
+    end
+
+
+    self.particles = love.graphics.newParticleSystem(gTextures['particle'],32)
+    self.particles:setParticleLifetime(1,5)
+    self.particles:setAreaSpread('normal',6,6)
+
+    self.particles:setColors(251,242,54,100,251,242,54,0)
+
+    if self.shine then
+        Timer.every(0.1,function()
+            self.particles:emit(32)
+        end)
+    end
+
+end
+
+function Tile:update(dt)
+    self.particles:update(dt)
 end
 
 function Tile:render(x, y)
@@ -39,4 +62,8 @@ function Tile:render(x, y)
     love.graphics.setColor(255, 255, 255, 255)
     love.graphics.draw(gTextures['main'], gFrames['tiles'][self.color][self.variety],
         self.x + x, self.y + y)
+
+    if self.shine then
+        love.graphics.draw(self.particles,self.x+x+16,self.y+y+16)
+    end
 end
